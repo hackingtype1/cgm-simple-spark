@@ -508,13 +508,13 @@ static void chart_layer_update_func(Layer* l, GContext* ctx) {
 
   if (data->iNumPoints) {
     // x-axis
-    graphics_draw_line(ctx,
-		       ((GPoint) {
-			 .x = data->iMargin,
-			   .y = data->iYAxisIntercept }),
-		       ((GPoint) { 
-			 .x = bounds.size.w - data->iMargin,
-			   .y = data->iYAxisIntercept }));
+    // graphics_draw_line(ctx,
+		//        ((GPoint) {
+		// 	 .x = data->iMargin,
+		// 	   .y = data->iYAxisIntercept }),
+		//        ((GPoint) { 
+		// 	 .x = bounds.size.w - data->iMargin,
+		// 	   .y = data->iYAxisIntercept }));
     
     // y-axis major ticks
     // for (int i = data->iYAxisIntercept; i <= (bounds.size.h - data->iMargin); i += data->iYTicks)
@@ -553,13 +553,13 @@ static void chart_layer_update_func(Layer* l, GContext* ctx) {
 		// 	     .y = i }));
 
     //y-axis
-    graphics_draw_line(ctx,
-		       ((GPoint) {
-			 .x = data->iXAxisIntercept,
-			   .y = data->iMargin }),
-		       ((GPoint) { 
-			 .x = data->iXAxisIntercept,
-			   .y = bounds.size.h - data->iMargin }));
+    // graphics_draw_line(ctx,
+		//        ((GPoint) {
+		// 	 .x = data->iXAxisIntercept,
+		// 	   .y = data->iMargin }),
+		//        ((GPoint) { 
+		// 	 .x = data->iXAxisIntercept,
+		// 	   .y = bounds.size.h - data->iMargin }));
     
     int range = (int)(data->fYMax) - (int)(data->fYMin); 
     uint16_t iPointRadius = 1;  

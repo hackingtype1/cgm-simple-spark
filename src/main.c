@@ -35,6 +35,8 @@ static char data_id[255] = "99";
 static char time_delta_str[124] = "";
 static char time_text[124] = "";
 
+static ChartLayer* chart_layer;
+
 enum CgmKey {
     CGM_EGV_DELTA_KEY = 0x0,
     CGM_EGV_KEY = 0x1,
@@ -75,29 +77,22 @@ static const uint32_t CGM_ICONS[] = {
 char *translate_error(AppMessageResult result) {
     switch (result) {
         case APP_MSG_OK: return "OK";
-        case APP_MSG_SEND_TIMEOUT: return "ast";// "Send Timeout";
-        case APP_MSG_SEND_REJECTED: return "asr"; //"Send Rejected";
-        case APP_MSG_NOT_CONNECTED: return "anc"; //"Not Connected";
-        case APP_MSG_APP_NOT_RUNNING: return "anr"; //"App Not Up";
-        case APP_MSG_INVALID_ARGS: return "aia"; //"App Invalid Args";
-        case APP_MSG_BUSY: return "aby"; //"App Busy";
-        case APP_MSG_BUFFER_OVERFLOW: return "abo"; //"App Overflow";
-        case APP_MSG_ALREADY_RELEASED: return "aar";//"App Msg Released";
-        case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "car"; //"Cback Registered";
-        case APP_MSG_CALLBACK_NOT_REGISTERED: return "cnr";//"Cback Not Registered";
-        case APP_MSG_OUT_OF_MEMORY: return "oom";//"Out of Memory";
-        case APP_MSG_CLOSED: return "acd";//"Closed";
-        case APP_MSG_INTERNAL_ERROR: return "aie";//"Internal Error";
-        default: return "uer";// "Unknown Error";
+        case APP_MSG_SEND_TIMEOUT: return "ast";
+        case APP_MSG_SEND_REJECTED: return "asr"; 
+        case APP_MSG_NOT_CONNECTED: return "anc"; 
+        case APP_MSG_APP_NOT_RUNNING: return "anr"; 
+        case APP_MSG_INVALID_ARGS: return "aia"; 
+        case APP_MSG_BUSY: return "aby"; 
+        case APP_MSG_BUFFER_OVERFLOW: return "abo"; 
+        case APP_MSG_ALREADY_RELEASED: return "aar";
+        case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "car"; 
+        case APP_MSG_CALLBACK_NOT_REGISTERED: return "cnr";
+        case APP_MSG_OUT_OF_MEMORY: return "oom";
+        case APP_MSG_CLOSED: return "acd";
+        case APP_MSG_INTERNAL_ERROR: return "aie";
+        default: return "uer";
     }
 }
-
-/**********CHART***************/
-
-static ChartLayer* chart_layer;
-
-
-
 
 /************************************ UI **************************************/
 void send_cmd(void) {

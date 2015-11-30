@@ -81,6 +81,56 @@ function noiseIntToNoiseString (noiseInt) {
    }
 }
 
+//ERRORS GETTING DATA
+function sendAuthError() {
+    Pebble.sendAppMessage({
+                    "vibe": 1, 	
+                    "egv": "log",		
+                    "trend": 0,	
+                    "alert": 4,
+                    "delta": "login err",
+                    "id": "99",
+                    "time_delta_int": -1,
+                });
+}
+
+function sendTimeOutError() {
+     Pebble.sendAppMessage({
+            "vibe": parseInt(options.vibe_temp,10),
+            "egv": "tot",
+            "trend": 0,
+            "alert": 4,
+            "delta": "tout-err",
+            "id": "99",
+            "time_delta_int": -1,
+        });
+}
+
+function sendServerError() {
+    Pebble.sendAppMessage({
+            "vibe": parseInt(options.vibe_temp,10),
+            "egv": "svr",
+            "trend": 0,
+            "alert": 4,
+            "delta": "net-err",
+            "id": "99",
+            "time_delta_int": -1,
+        });
+}
+
+function sendUnknownError() {
+    Pebble.sendAppMessage({
+                "delta": "data err",
+                "egv": "ukn",
+                "trend": 0,
+                "alert": 4,
+                "vibe": 0,
+                "id": "99",
+                "time_delta_int": -1,
+            }); 
+}
+
+
 //parse and use standard NS data
 function nightscout(options) {
 
@@ -111,17 +161,8 @@ function nightscout(options) {
             var data = JSON.parse(http.responseText);
             console.log("response: " + http.responseText);
              
-            if (data.length == 0) {
-                
-                Pebble.sendAppMessage({
-                    "delta": "data err", 	
-                    "egv": "",			
-                    "trend": 0,	
-                    "alert": 4,	
-                    "vibe": 0,
-                    "id": now.getTime().toString(),
-                    "time_delta_int": -1,
-                });
+            if (data.length == 0) {               
+                sendUnknownError();
             } else { 
             
                 var timeAgo = now.getTime() - data[0].date;       
@@ -227,39 +268,15 @@ function nightscout(options) {
             }
 
         } else {
-            Pebble.sendAppMessage({
-                "delta": "data error",
-                "egv": "",
-                "trend": 0,
-                "alert": 4,
-                "vibe": 0,
-                "id": "99",
-                "time_delta_int": -1,
-            });
+           sendUnknownError();
         }
     };
     
     http.onerror = function () {        
-        Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "net-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+        sendServerError();
     };
-   http.ontimeout = function () {  
-        Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "tout-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+    http.ontimeout = function () {
+        sendTimeOutError();
     };
 
     http.send();
@@ -342,48 +359,16 @@ function authenticateShare(options, defaults) {
         if (http.status == 200) {
             data = getShareGlucoseData(http.responseText.replace(/['"]+/g, ''), defaults, options);
         } else {
-                var now = new Date();
-                var id_time = now.getTime();
-                Pebble.sendAppMessage({
-                    "vibe": 1, 	
-                    "egv": 0,		
-                    "trend": 0,	
-                    "alert": 4,
-                    "delta": "login err",
-                    "id": id_time.toString(),
-                    "time_delta_int": -1,
-                });
-            
+                sendAuthError();           
         }
     };
     
        http.ontimeout = function () {
-        console.log("timeout");
-        var now = new Date();
-        var id_time = now.getTime();
-        Pebble.sendAppMessage({
-            "vibe": 1,
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "tout-err",
-            "id": id_time.toString(),
-            "time_delta_int": -1,
-        });
+        sendTimeOutError();
     };
     
     http.onerror = function () {
-        var now = new Date();
-        var id_time = now.getTime();
-        Pebble.sendAppMessage({
-            "vibe": 1, 	
-            "egv": 0,			
-            "trend": 0,	
-            "alert": 4,	
-            "delta": "net err",
-            "id": id_time,
-            "time_delta_int": -1,
-        });
+        sendServerError();
     };
 
     http.send(JSON.stringify(body));
@@ -408,17 +393,8 @@ function getShareGlucoseData(sessionId, defaults, options) {
             var data = JSON.parse(http.responseText);
             console.log("response: " + http.responseText)
             //handle arrays less than 2 in length
-            if (data.length == 0) {
-                
-                Pebble.sendAppMessage({
-                    "delta": "data err", 	
-                    "egv": "",			
-                    "trend": 0,	
-                    "alert": 4,	
-                    "vibe": 0,
-                    "id": now.getTime().toString(),
-                    "time_delta_int": -1,
-                });
+            if (data.length == 0) {                
+                sendUnknownError();
             } else { 
             
                 //TODO: calculate loss
@@ -511,39 +487,15 @@ function getShareGlucoseData(sessionId, defaults, options) {
             }
 
         } else {
-            Pebble.sendAppMessage({
-                "delta": "data error",
-                "egv": "",
-                "trend": 0,
-                "alert": 4,
-                "vibe": 0,
-                "id": "99",
-                "time_delta_int": -1,
-            });
+            sendUnknownError();
         }
     };
     
     http.onerror = function () { 
-        Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "net-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+        sendServerError();
     };
    http.ontimeout = function () {
-  Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "tout-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+        sendTimeOutError();
     };
 
     http.send();
@@ -655,17 +607,7 @@ function rogue(options) {
                 options.id = response[0].id.toString();
                 window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
             } else {
-                Pebble.sendAppMessage({
-                    "delta": 'must code.', 	//str
-                    "egv": 0,		//int	
-                    "trend": 0,	//int
-                    "alert": 4,	//in
-                    "vibe": 1,
-                    "id": "99",
-                    "time_delta_int": -1,
-                });
-                console.log("first if");
-                console.log(req.status);
+                sendUnknownError();
             }
         } else {
             console.log("second if");
@@ -673,26 +615,10 @@ function rogue(options) {
     };
     
     req.onerror = function () {
-        Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "net-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+        sendServerError();
     };
    req.ontimeout = function () {
-        Pebble.sendAppMessage({
-            "vibe": parseInt(options.vibe_temp,10),
-            "egv": "err",
-            "trend": 0,
-            "alert": 4,
-            "delta": "tout-err",
-            "id": "99",
-            "time_delta_int": -1,
-        });
+        sendTimeOutError();
     };
     req.send(null);
 }
