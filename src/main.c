@@ -5,13 +5,6 @@
 
 #define ANTIALIASING true
 
-#define FINAL_RADIUS 68
-
-#define ANIMATION_DURATION 500
-#define ANIMATION_DELAY    0
-
-
-
 typedef struct {
     int hours;
     int minutes;
@@ -24,7 +17,7 @@ static AppTimer *timer;
 
 static GPoint s_center;
 static Time s_last_time, s_anim_time;
-static int s_radius = 0, t_delta = 3, has_launched = 0, vibe_state = 1, alert_state = 0 ,s_anim_hours_60 = 0, com_alert = 1;
+static int s_radius = 0, t_delta = 3, has_launched = 0, vibe_state = 1, alert_state = 0 ,s_anim_hours_60 = 0;
 static int * bgs;
 static int * bg_times;
 static int num_bgs = 0;
@@ -82,20 +75,20 @@ static const uint32_t CGM_ICONS[] = {
 char *translate_error(AppMessageResult result) {
     switch (result) {
         case APP_MSG_OK: return "OK";
-        case APP_MSG_SEND_TIMEOUT: return "Send Timeout";
-        case APP_MSG_SEND_REJECTED: return "Send Rejected";
-        case APP_MSG_NOT_CONNECTED: return "Not Connected";
-        case APP_MSG_APP_NOT_RUNNING: return "App Not Up";
-        case APP_MSG_INVALID_ARGS: return "App Invalid Args";
-        case APP_MSG_BUSY: return "App Busy";
-        case APP_MSG_BUFFER_OVERFLOW: return "App Overflow";
-        case APP_MSG_ALREADY_RELEASED: return "App Msg Released";
-        case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "Cback Registered";
-        case APP_MSG_CALLBACK_NOT_REGISTERED: return "Cback Not Registered";
-        case APP_MSG_OUT_OF_MEMORY: return "Out of Memory";
-        case APP_MSG_CLOSED: return "Closed";
-        case APP_MSG_INTERNAL_ERROR: return "Internal Error";
-        default: return "Unknown Error";
+        case APP_MSG_SEND_TIMEOUT: return "ast";// "Send Timeout";
+        case APP_MSG_SEND_REJECTED: return "asr"; //"Send Rejected";
+        case APP_MSG_NOT_CONNECTED: return "anc"; //"Not Connected";
+        case APP_MSG_APP_NOT_RUNNING: return "anr"; //"App Not Up";
+        case APP_MSG_INVALID_ARGS: return "aia"; //"App Invalid Args";
+        case APP_MSG_BUSY: return "aby"; //"App Busy";
+        case APP_MSG_BUFFER_OVERFLOW: return "abo"; //"App Overflow";
+        case APP_MSG_ALREADY_RELEASED: return "aar";//"App Msg Released";
+        case APP_MSG_CALLBACK_ALREADY_REGISTERED: return "car"; //"Cback Registered";
+        case APP_MSG_CALLBACK_NOT_REGISTERED: return "cnr";//"Cback Not Registered";
+        case APP_MSG_OUT_OF_MEMORY: return "oom";//"Out of Memory";
+        case APP_MSG_CLOSED: return "acd";//"Closed";
+        case APP_MSG_INTERNAL_ERROR: return "aie";//"Internal Error";
+        default: return "uer";// "Unknown Error";
     }
 }
 
@@ -581,21 +574,53 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     process_alert();
     accel_tap_service_unsubscribe();
     has_launched = 1;
-    com_alert = 1;
-
 
 }
 
 static void inbox_dropped_callback(AppMessageResult reason, void *context) {
+    s_color_channels[0] = 0;
+    s_color_channels[1] = 0;
+    s_color_channels[2] = 255;
+        
+    if (time_delta_layer)
+        text_layer_set_text_color(time_delta_layer, GColorWhite);
+    if (icon_layer)
+        bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
+    if (bg_layer)
+        text_layer_set_text_color(bg_layer, GColorWhite);
+    if (delta_layer)    
+        text_layer_set_text_color(delta_layer, GColorWhite);
+    
     snprintf(time_delta_str, 12, "in-err(%d)", t_delta);
+    if(bg_layer)
+        text_layer_set_text(bg_layer, translate_error(reason));
+        
     if(time_delta_layer)
         text_layer_set_text(time_delta_layer, time_delta_str);
+        
     comm_alert();
 
 }
 
 static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResult reason, void *context) {
+    s_color_channels[0] = 0;
+    s_color_channels[1] = 0;
+    s_color_channels[2] = 255;
+        
+    if (time_delta_layer)
+        text_layer_set_text_color(time_delta_layer, GColorWhite);
+    if (icon_layer)
+        bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
+    if (bg_layer)
+        text_layer_set_text_color(bg_layer, GColorWhite);
+    if (delta_layer)    
+        text_layer_set_text_color(delta_layer, GColorWhite);
+        
     snprintf(time_delta_str, 12, "out-err(%d)", t_delta);
+    
+    if(bg_layer)
+        text_layer_set_text(bg_layer, translate_error(reason));
+    
     if(time_delta_layer)
         text_layer_set_text(time_delta_layer, time_delta_str);
     comm_alert();
