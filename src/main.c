@@ -16,20 +16,19 @@ static Layer * s_canvas_layer;
 static AppTimer *timer;
 
 static GPoint s_center;
-static Time s_last_time, s_anim_time;
-static int s_radius = 0, t_delta = 3, has_launched = 0, vibe_state = 1, alert_state = 0 , s_anim_hours_60 = 0, check_count = 0;
+static Time s_last_time;
+static int s_radius = 0, t_delta = 0, has_launched = 0, vibe_state = 1, alert_state = 0, check_count = 0;
 static int * bgs;
 static int * bg_times;
 static int num_bgs = 0;
+static int retry_interval = 4;
 static int tag_raw = 0;
-static bool s_animating = false;
 
 static GBitmap *icon_bitmap = NULL;
 
 static BitmapLayer * icon_layer;
-static TextLayer * bg_layer, *delta_layer, *time_delta_layer, *time_layer, *date_layer;
+static TextLayer * bg_layer, *delta_layer, *time_delta_layer, *time_layer;
 
-static char date_app_text[] = "";
 static char last_bg[124];
 static int data_id = 99;
 static char time_delta_str[124] = "";
@@ -208,14 +207,14 @@ void accel_tap_handler(AccelAxisType axis, int32_t direction) {
 
 static void tick_handler(struct tm * tick_time, TimeUnits changed) {
     if (!has_launched) {                 
-            snprintf(time_delta_str, 12, "load(%d)", ++check_count);
+            snprintf(time_delta_str, 12, "load(%d)", check_count + 1);
             
             if (time_delta_layer) {
                 text_layer_set_text(time_delta_layer, time_delta_str);
             }
     } else 
     APP_LOG(APP_LOG_LEVEL_INFO, "tick check_count: %d", check_count);
-    if(t_delta > 4 || check_count > 1) {
+    if(t_delta > retry_interval || check_count > 1) {
 
         send_cmd();
         
@@ -737,7 +736,6 @@ static void init() {
 
 static void deinit() {
     window_destroy(s_main_window);
-    persist_write_int(0, data_id);
 }
 
 int main() {

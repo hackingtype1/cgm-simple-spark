@@ -1,6 +1,7 @@
 var fix = 0;
 var hasTimeline = 1;
 var topic = "not_set";
+var defaultId = 99;
 
 function fetchCgmData(id) {
    var options = JSON.parse(window.localStorage.getItem('cgmPebbleDuo')) || 
@@ -13,22 +14,26 @@ function fetchCgmData(id) {
             'api' : '',
             'vibe' : 1,
         };
-             
+
+    // if (id != defaultId) {
+    //     options.id = id;
+    // }
+    
     switch (options.mode) {
         case "Rogue":
-            options.id = id;
+
             subscribeBy(options.api);
             rogue(options);
             break;
 
         case "Nightscout":
-            options.id = id;
+
             subscribeBy(options.api);
-            nightscout(options);     
+            nightscout(options);
             break;
 
         case "Share":
-            options.id = id;
+
             subscribeBy(options.accountName);
             share(options);
             break;
@@ -89,7 +94,7 @@ function sendAuthError() {
                     "trend": 0,	
                     "alert": 4,
                     "delta": "login err",
-                    "id": 99,
+                    "id": defaultId,
                     "time_delta_int": -1,
                 });
 }
@@ -101,7 +106,7 @@ function sendTimeOutError() {
             "trend": 0,
             "alert": 4,
             "delta": "tout-err",
-            "id": 99,
+            "id": defaultId,
             "time_delta_int": -1,
         });
 }
@@ -113,7 +118,7 @@ function sendServerError() {
             "trend": 0,
             "alert": 4,
             "delta": "net-err",
-            "id": 99,
+            "id": defaultId,
             "time_delta_int": -1,
         });
 }
@@ -125,7 +130,7 @@ function sendUnknownError() {
                 "trend": 0,
                 "alert": 4,
                 "vibe": 0,
-                "id": 99,
+                "id": defaultId,
                 "time_delta_int": -1,
             }); 
 }
@@ -256,7 +261,7 @@ function nightscout(options) {
                     "bgs" : createNightscoutBgArray(data),
                     "bg_times" : createNightscoutBgTimeArray(data)
                 });
-                options.id = data[0].date.toString();
+                options.id = data[0].date;
                 window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
 
                 if (hasTimeline) {
@@ -476,7 +481,7 @@ function getShareGlucoseData(sessionId, defaults, options) {
                     "bgs" : createShareBgArray(data),
                     "bg_times" : createShareBgTimeArray(data)
                 });
-                options.id = wall.toString();
+                options.id = wall;
                 window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
                 
                 if (hasTimeline) {
@@ -540,7 +545,7 @@ function msToMinutes(millisec) {
 }
 
 function calculateShareAlert(egv, currentId, options) {
-
+    console.log("comparing: " + currentId + " to " + options.id);
     if (parseInt(options.id, 10) == parseInt(currentId, 10)) {
         options.vibe_temp = 0;
     } else {
@@ -604,7 +609,7 @@ function rogue(options) {
                     "bg_times" : createBgTimeArray(response)
                     
                 });
-                options.id = response[0].id.toString();
+                options.id = response[0].id;
                 window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
             } else {
                 sendUnknownError();
@@ -680,7 +685,7 @@ Pebble.addEventListener("showConfiguration", function () {
 Pebble.addEventListener("webviewclosed", function (e) {
     var options = JSON.parse(decodeURIComponent(e.response));
     window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
-    fetchCgmData(99);
+    fetchCgmData(defaultId);
 });
 
 Pebble.addEventListener("ready",
@@ -695,7 +700,7 @@ Pebble.addEventListener("ready",
             'password': '' ,
             'api' : '',
             'vibe' : 1,
-            'id' : 99,
+            'id' : defaultId,
         };     
         fetchCgmData(options.id);
     });

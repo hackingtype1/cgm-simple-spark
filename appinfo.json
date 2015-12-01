@@ -91,14 +91,14 @@
         ]
     },
     "sdkVersion": "3",
-    "shortName": "SimpleCGM Spark",
+    "shortName": "Spark",
     "targetPlatforms": [
         "basalt",
         "aplite",
         "chalk"
     ],
     "uuid": "58d2a91c-9489-4cde-8f7b-59f066a98462",
-    "versionLabel": "3.3",
+    "versionLabel": "3.4",
     "watchapp": {
         "watchface": true
     }
