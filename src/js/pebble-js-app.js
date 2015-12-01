@@ -89,7 +89,7 @@ function sendAuthError() {
                     "trend": 0,	
                     "alert": 4,
                     "delta": "login err",
-                    "id": "99",
+                    "id": 99,
                     "time_delta_int": -1,
                 });
 }
@@ -101,7 +101,7 @@ function sendTimeOutError() {
             "trend": 0,
             "alert": 4,
             "delta": "tout-err",
-            "id": "99",
+            "id": 99,
             "time_delta_int": -1,
         });
 }
@@ -113,7 +113,7 @@ function sendServerError() {
             "trend": 0,
             "alert": 4,
             "delta": "net-err",
-            "id": "99",
+            "id": 99,
             "time_delta_int": -1,
         });
 }
@@ -125,7 +125,7 @@ function sendUnknownError() {
                 "trend": 0,
                 "alert": 4,
                 "vibe": 0,
-                "id": "99",
+                "id": 99,
                 "time_delta_int": -1,
             }); 
 }
@@ -251,7 +251,7 @@ function nightscout(options) {
                     "trend": trend,	
                     "alert": alert,	
                     "vibe": options.vibe_temp,
-                    "id": data[0].date.toString(),
+                    "id": data[0].date,
                     "time_delta_int": timeDeltaMinutes,
                     "bgs" : createNightscoutBgArray(data),
                     "bg_times" : createNightscoutBgTimeArray(data)
@@ -471,7 +471,7 @@ function getShareGlucoseData(sessionId, defaults, options) {
                     "trend": trend,	
                     "alert": alert,	
                     "vibe": options.vibe_temp,
-                    "id": wall.toString(),
+                    "id": wall,
                     "time_delta_int": timeDeltaMinutes,
                     "bgs" : createShareBgArray(data),
                     "bg_times" : createShareBgTimeArray(data)
@@ -598,7 +598,7 @@ function rogue(options) {
                     "trend": trend,	//int
                     "alert": alert,	//int
                     "vibe": parseInt(options.vibe_temp,10),
-                    "id": response[0].id.toString(),
+                    "id": response[0].id,
                     "time_delta_int": Math.floor(response[0].timesinceread),
                     "bgs" : createBgArray(response),
                     "bg_times" : createBgTimeArray(response)
@@ -680,7 +680,7 @@ Pebble.addEventListener("showConfiguration", function () {
 Pebble.addEventListener("webviewclosed", function (e) {
     var options = JSON.parse(decodeURIComponent(e.response));
     window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
-    fetchCgmData("99");
+    fetchCgmData(99);
 });
 
 Pebble.addEventListener("ready",
@@ -695,7 +695,7 @@ Pebble.addEventListener("ready",
             'password': '' ,
             'api' : '',
             'vibe' : 1,
-            'id' : "99",
+            'id' : 99,
         };     
         fetchCgmData(options.id);
     });

@@ -17,7 +17,7 @@ static AppTimer *timer;
 
 static GPoint s_center;
 static Time s_last_time, s_anim_time;
-static int s_radius = 0, t_delta = 3, has_launched = 0, vibe_state = 1, alert_state = 0 ,s_anim_hours_60 = 0;
+static int s_radius = 0, t_delta = 3, has_launched = 0, vibe_state = 1, alert_state = 0 , s_anim_hours_60 = 0, check_count = 0;
 static int * bgs;
 static int * bg_times;
 static int num_bgs = 0;
@@ -31,7 +31,7 @@ static TextLayer * bg_layer, *delta_layer, *time_delta_layer, *time_layer, *date
 
 static char date_app_text[] = "";
 static char last_bg[124];
-static char data_id[255] = "99";
+static int data_id = 99;
 static char time_delta_str[124] = "";
 static char time_text[124] = "";
 
@@ -94,38 +94,57 @@ char *translate_error(AppMessageResult result) {
     }
 }
 
+static void comm_alert() {
+    
+    VibePattern pat = {
+        .durations = error,
+        .num_segments = ARRAY_LENGTH(error),
+    };     
+        if (check_count % 5 == 0 || t_delta % 5 == 0) {
+            vibes_enqueue_custom_pattern(pat);
+        }
+    
+    b_color_channels[0] = 255;
+    b_color_channels[1] = 0;
+    b_color_channels[2] = 0;
+   
+    layer_mark_dirty(s_canvas_layer);
+
+}
 /************************************ UI **************************************/
+static void send_int(int key, int value) {
+  DictionaryIterator *iter;
+  app_message_outbox_begin(&iter);
+  dict_write_int(iter, key, &value, sizeof(int), true);
+  app_message_outbox_send();
+}
+
 void send_cmd(void) {
     APP_LOG(APP_LOG_LEVEL_INFO, "send_cmd");
     
     if (s_canvas_layer) {
         gbitmap_destroy(icon_bitmap);
-        snprintf(time_delta_str, 12, "check(%d)", (int)t_delta-3);
+        snprintf(time_delta_str, 12, "check(%d)", check_count++);
+        
+        if (check_count > 1)
+            data_id = 99;
+            
+        if (check_count > 4)
+            comm_alert();
+            
         if(time_delta_layer)
             text_layer_set_text(time_delta_layer, time_delta_str);
 
         icon_bitmap = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_REFRESH_WHITE);
         if(icon_layer)
             bitmap_layer_set_bitmap(icon_layer, icon_bitmap);
-    }
+     }
     
-        DictionaryIterator *iter;
-        app_message_outbox_begin(&iter);
-    
-        if (iter == NULL) {
-            return;
-        }
-    
-        static char *idptr = data_id;
-
-        Tuplet idval = TupletCString(5, idptr);
-    
-        dict_write_tuplet(iter, &idval);
-        dict_write_end(iter);
+        send_int(5, data_id);
+        
         APP_LOG(APP_LOG_LEVEL_INFO, "Message sent!");
-        APP_LOG(APP_LOG_LEVEL_INFO, "t_delta: %d", t_delta);
+        APP_LOG(APP_LOG_LEVEL_INFO, "check_count: %d", check_count);
 
-        app_message_outbox_send(); 
 }
 /*************Startup Timer*******/
 //Message SHOULD come from smartphone app, but this will kick it off in less than 60 seconds if it can.
@@ -185,36 +204,19 @@ void accel_tap_handler(AccelAxisType axis, int32_t direction) {
     }
     
 }
-static void comm_alert() {
-    
-    VibePattern pat = {
-        .durations = error,
-        .num_segments = ARRAY_LENGTH(error),
-    };     
-        if (t_delta % 5 == 0) {
-            vibes_enqueue_custom_pattern(pat);
-        }
-    
-    b_color_channels[0] = 255;
-    b_color_channels[1] = 0;
-    b_color_channels[2] = 0;
-   
-    layer_mark_dirty(s_canvas_layer);
 
-}
 
 static void tick_handler(struct tm * tick_time, TimeUnits changed) {
     if (!has_launched) {                 
-            snprintf(time_delta_str, 12, "load(%d)", t_delta-4);
+            snprintf(time_delta_str, 12, "load(%d)", ++check_count);
             
             if (time_delta_layer) {
                 text_layer_set_text(time_delta_layer, time_delta_str);
             }
     } else 
-    APP_LOG(APP_LOG_LEVEL_INFO, "t_delta_tt: %d", t_delta);
-    if(t_delta > 4) {
-        // accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
-        // accel_tap_service_subscribe(accel_tap_handler);
+    APP_LOG(APP_LOG_LEVEL_INFO, "tick check_count: %d", check_count);
+    if(t_delta > 4 || check_count > 1) {
+
         send_cmd();
         
     } else
@@ -450,6 +452,7 @@ static void process_alert() {
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     app_timer_cancel(timer);
+    check_count = 0;
     APP_LOG(APP_LOG_LEVEL_INFO, "Message received!");
     if(time_delta_layer)
         text_layer_set_text(time_delta_layer, "in...");
@@ -465,7 +468,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
         switch (new_tuple->key) {
                 
             case CGM_ID:;
-                strncpy(data_id, new_tuple->value->cstring, 255);
+                data_id = new_tuple->value->int32;
                 break;
                 
             case CGM_EGV_DELTA_KEY:;
@@ -734,7 +737,7 @@ static void init() {
 
 static void deinit() {
     window_destroy(s_main_window);
-    persist_write_string(0, data_id);
+    persist_write_int(0, data_id);
 }
 
 int main() {
