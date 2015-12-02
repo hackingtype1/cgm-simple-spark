@@ -5,7 +5,7 @@ var defaultId = 99;
 
 function fetchCgmData(id) {
    var options = JSON.parse(window.localStorage.getItem('cgmPebbleDuo')) || 
-     {   'mode': 'Share' ,
+     {   'mode': 'Default' ,
             'high': 180,
             'low' : 80,
             'unit': 'mg/dL',
@@ -37,6 +37,18 @@ function fetchCgmData(id) {
             subscribeBy(options.accountName);
             share(options);
             break;
+            
+         default:
+         Pebble.sendAppMessage({
+                    "vibe": 1, 	
+                    "egv": "set",		
+                    "trend": 0,	
+                    "alert": 4,
+                    "delta": "setup up required",
+                    "id": defaultId,
+                    "time_delta_int": -1,
+                });
+         break;
     }
 }
 
@@ -123,10 +135,10 @@ function sendServerError() {
         });
 }
 
-function sendUnknownError() {
+function sendUnknownError(msg) {
     Pebble.sendAppMessage({
-                "delta": "data err",
-                "egv": "ukn",
+                "delta": msg,
+                "egv": "exc",
                 "trend": 0,
                 "alert": 4,
                 "vibe": 0,
@@ -167,7 +179,7 @@ function nightscout(options) {
             console.log("response: " + http.responseText);
              
             if (data.length == 0) {               
-                sendUnknownError();
+                sendUnknownError("data err");
             } else { 
             
                 var timeAgo = now.getTime() - data[0].date;       
@@ -273,7 +285,7 @@ function nightscout(options) {
             }
 
         } else {
-           sendUnknownError();
+           sendUnknownError("data err");
         }
     };
     
@@ -284,7 +296,13 @@ function nightscout(options) {
         sendTimeOutError();
     };
 
-    http.send();
+    try {
+        http.send();
+    }
+    catch (e) {
+        sendUnknownError("invalid url");
+    }
+    
 }
 
 function createNightscoutBgArray(data) {
@@ -399,7 +417,7 @@ function getShareGlucoseData(sessionId, defaults, options) {
             console.log("response: " + http.responseText)
             //handle arrays less than 2 in length
             if (data.length == 0) {                
-                sendUnknownError();
+                sendUnknownError("data err");
             } else { 
             
                 //TODO: calculate loss
@@ -436,7 +454,7 @@ function getShareGlucoseData(sessionId, defaults, options) {
 
                     options.egv = data[0].Value;
                 }
-                var alert = calculateShareAlert(convertedEgv, wall.toString(), options);
+                var alert = calculateShareAlert(convertedEgv, wall, options);
                 var timeDeltaMinutes = Math.floor(timeAgo / 60000);              
                 var d = new Date(wall);
                 var n = d.getMinutes();
@@ -492,7 +510,7 @@ function getShareGlucoseData(sessionId, defaults, options) {
             }
 
         } else {
-            sendUnknownError();
+            sendUnknownError("data err");
         }
     };
     
@@ -551,7 +569,6 @@ function calculateShareAlert(egv, currentId, options) {
     } else {
         options.vibe_temp = options.vibe + 1;
     }
-    console.log(egv.toString() + " " + options.low + " " + options.high);
 
     if (egv <= options.low){
         return 2;
@@ -612,7 +629,7 @@ function rogue(options) {
                 options.id = response[0].id;
                 window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
             } else {
-                sendUnknownError();
+                sendUnknownError("data err");
             }
         } else {
             console.log("second if");
