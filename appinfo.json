@@ -18,31 +18,13 @@
     "projectType": "native",
     "resources": {
         "media": [
-            {
-                "file": "fonts/HelveticaNeue.ttf",
-                "name": "FONT_HN_20",
-                "type": "font"
-            },
-            {
-                "file": "fonts/HelveticaNeueBold.ttf",
-                "name": "FONT_HN_BOLD_16",
-                "type": "font"
-            },
+            
             {          
                 "file": "fonts/HelveticaNeueBold.ttf",
                 "name": "FONT_HN_BOLD_48",
                 "type": "font"
             },
-            {
-                "file": "fonts/HelveticaNeueBold.ttf",
-                "name": "FONT_HN_BOLD_18",
-                "type": "font"
-            },
-            {
-                "file": "fonts/HelveticaNeue.ttf",
-                "name": "FONT_HN_25",
-                "type": "font"
-            },
+            
             {
                 "file": "images/up.png",
                 "name": "IMAGE_UP",
@@ -98,7 +80,7 @@
         "chalk"
     ],
     "uuid": "58d2a91c-9489-4cde-8f7b-59f066a98462",
-    "versionLabel": "3.9",
+    "versionLabel": "4.0",
     "watchapp": {
         "watchface": true
     }

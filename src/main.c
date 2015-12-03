@@ -119,7 +119,7 @@ static void send_int(int key, int value) {
 }
 
 void send_cmd(void) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "send_cmd");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "send_cmd");
     
     if (s_canvas_layer) {
         gbitmap_destroy(icon_bitmap);
@@ -141,8 +141,8 @@ void send_cmd(void) {
     
         send_int(5, data_id);
         
-        APP_LOG(APP_LOG_LEVEL_INFO, "Message sent!");
-        APP_LOG(APP_LOG_LEVEL_INFO, "check_count: %d", check_count);
+        //APP_LOG(APP_LOG_LEVEL_INFO, "Message sent!");
+        //APP_LOG(APP_LOG_LEVEL_INFO, "check_count: %d", check_count);
 
 }
 /*************Startup Timer*******/
@@ -178,31 +178,31 @@ static void clock_refresh(struct tm * tick_time) {
     }
 
     s_last_time.hours = tick_time->tm_hour;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "time hours 1: %d", s_last_time.hours);
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "time hours 1: %d", s_last_time.hours);
     s_last_time.hours -= (s_last_time.hours > 12) ? 12 : 0;
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "time hours 2: %d", s_last_time.hours);
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "time hours 2: %d", s_last_time.hours);
     s_last_time.minutes = tick_time->tm_min;
     
 }
 
-void accel_tap_handler(AccelAxisType axis, int32_t direction) {
+// void accel_tap_handler(AccelAxisType axis, int32_t direction) {
     
-    if (axis == ACCEL_AXIS_X)
-    {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "X");
-        //send_cmd();
-    } else if (axis == ACCEL_AXIS_Y)
+//     if (axis == ACCEL_AXIS_X)
+//     {
+//         //APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "X");
+//         //send_cmd();
+//     } else if (axis == ACCEL_AXIS_Y)
         
-    {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "Y");
-        //send_cmd();
-    } else if (axis == ACCEL_AXIS_Z)
-    {
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "Z");
-        //send_cmd();
-    }
+//     {
+//         //APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "Y");
+//         //send_cmd();
+//     } else if (axis == ACCEL_AXIS_Z)
+//     {
+//         //APP_LOG(APP_LOG_LEVEL_DEBUG, "axis: %s", "Z");
+//         //send_cmd();
+//     }
     
-}
+// }
 
 
 static void tick_handler(struct tm * tick_time, TimeUnits changed) {
@@ -213,7 +213,7 @@ static void tick_handler(struct tm * tick_time, TimeUnits changed) {
                 text_layer_set_text(time_delta_layer, time_delta_str);
             }
     } else 
-    APP_LOG(APP_LOG_LEVEL_INFO, "tick check_count: %d", check_count);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "tick check_count: %d", check_count);
     if(t_delta > retry_interval || check_count > 1) {
 
         send_cmd();
@@ -337,7 +337,7 @@ static void reset_background() {
 }
 
 static void process_alert() {
-    APP_LOG(APP_LOG_LEVEL_DEBUG, "Vibe State: %i", vibe_state);
+    //APP_LOG(APP_LOG_LEVEL_DEBUG, "Vibe State: %i", vibe_state);
     switch (alert_state) {
         
     case LOSS_MID_NO_NOISE:;    
@@ -348,7 +348,7 @@ static void process_alert() {
         if (vibe_state > 0)
             vibes_long_pulse();
             
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", LOSS_MID_NO_NOISE);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", LOSS_MID_NO_NOISE);
 #if defined(PBL_COLOR)
         text_layer_set_text_color(bg_layer, GColorBlack);
 #ifdef PBL_PLATFORM_CHALK 
@@ -384,7 +384,7 @@ static void process_alert() {
        if (vibe_state > 0)
             vibes_long_pulse();
             
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", LOSS_HIGH_NO_NOISE);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", LOSS_HIGH_NO_NOISE);
         if(bg_layer)
             text_layer_set_text_color(bg_layer, GColorWhite);
         if(delta_layer)
@@ -403,7 +403,7 @@ static void process_alert() {
         if (vibe_state > 1)
             vibes_double_pulse();
             
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", OKAY);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", OKAY);
         if(bg_layer)
             text_layer_set_text_color(bg_layer, GColorBlack);
 #ifdef PBL_PLATFORM_CHALK
@@ -422,12 +422,9 @@ static void process_alert() {
         break;
         
     case OLD_DATA:;
-        VibePattern pat = {
-            .durations = error,
-            .num_segments = ARRAY_LENGTH(error),
-        };
+
         comm_alert();
-        APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", OLD_DATA);
+        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", OLD_DATA);
         
         s_color_channels[0] = 0;
         s_color_channels[1] = 0;
@@ -452,12 +449,15 @@ static void process_alert() {
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
     app_timer_cancel(timer);
     check_count = 0;
-    APP_LOG(APP_LOG_LEVEL_INFO, "Message received!");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "Message received!");
     if(time_delta_layer)
         text_layer_set_text(time_delta_layer, "in...");
         
     // Get the first pair
     Tuple *new_tuple = dict_read_first(iterator);
+    
+    uint32_t dict = dict_size(iterator);
+    //APP_LOG(APP_LOG_LEVEL_INFO, "size of received: %d", (int)dict);
     reset_background();
     CgmData* cgm_data = cgm_data_create(1,2,"3m","199","+3mg/dL","Evan");
 
@@ -523,16 +523,16 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             case CGM_BGS:;
                 ProcessingState* state = data_processor_create(new_tuple->value->cstring, ',');
                 uint8_t num_strings = data_processor_count(state);
-                APP_LOG(APP_LOG_LEVEL_DEBUG, "BG num: %i", num_strings);
+                //APP_LOG(APP_LOG_LEVEL_DEBUG, "BG num: %i", num_strings);
                 bgs = (int*)malloc((num_strings-1)*sizeof(int));     
                 for (uint8_t n = 0; n < num_strings; n += 1) {
                     if (n == 0) {
                         tag_raw = data_processor_get_int(state);
-                        APP_LOG(APP_LOG_LEVEL_DEBUG, "Tag Raw : %i", tag_raw);
+                        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Tag Raw : %i", tag_raw);
                     }
                     else {
                         bgs[n-1] = data_processor_get_int(state);
-                        APP_LOG(APP_LOG_LEVEL_DEBUG, "BG Split: %i", bgs[n-1]);
+                        //APP_LOG(APP_LOG_LEVEL_DEBUG, "BG Split: %i", bgs[n-1]);
                     }     
                 }
                 num_bgs = num_strings - 1;			
@@ -540,11 +540,11 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
             case CGM_BG_TIMES:;
                 ProcessingState* state_t = data_processor_create(new_tuple->value->cstring, ',');
                 uint8_t num_strings_t = data_processor_count(state_t);
-                APP_LOG(APP_LOG_LEVEL_DEBUG, "BG_t num: %i", num_strings_t);
+                //APP_LOG(APP_LOG_LEVEL_DEBUG, "BG_t num: %i", num_strings_t);
                 bg_times = (int*)malloc(num_strings_t*sizeof(int));
                 for (uint8_t n = 0; n < num_strings_t; n += 1) {
                     bg_times[n] = data_processor_get_int(state_t);
-                    APP_LOG(APP_LOG_LEVEL_DEBUG, "BG_t Split: %i", bg_times[n]);
+                    //APP_LOG(APP_LOG_LEVEL_DEBUG, "BG_t Split: %i", bg_times[n]);
                 }			
                 break;
         }
@@ -569,7 +569,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     }
     //Process Alerts
     process_alert();
-    accel_tap_service_unsubscribe();
+    // accel_tap_service_unsubscribe();
     has_launched = 1;
 
 }
@@ -625,7 +625,7 @@ static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResul
 }
 
 static void outbox_sent_callback(DictionaryIterator *iterator, void *context) {
-    APP_LOG(APP_LOG_LEVEL_INFO, "out sent callback");
+    //APP_LOG(APP_LOG_LEVEL_INFO, "out sent callback");
 }
 
 static void window_load(Window * window) {
@@ -719,8 +719,8 @@ static void init() {
     
     tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
     
-    accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
-    accel_tap_service_subscribe(accel_tap_handler);
+    // accel_service_set_sampling_rate(ACCEL_SAMPLING_10HZ);
+    // accel_tap_service_subscribe(accel_tap_handler);
     
        
     // Registering callbacks
@@ -728,7 +728,7 @@ static void init() {
     app_message_register_inbox_dropped(inbox_dropped_callback);
     app_message_register_outbox_failed(outbox_failed_callback);
     app_message_register_outbox_sent(outbox_sent_callback);
-    app_message_open(app_message_inbox_size_maximum(), app_message_outbox_size_maximum());
+    app_message_open(320, 40);
     
     timer = app_timer_register(10000, timer_callback, NULL);
 
