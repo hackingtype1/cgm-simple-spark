@@ -13,12 +13,13 @@ function fetchCgmData(id) {
             'password': '' ,
             'api' : '',
             'vibe' : 1,
+            'raw' : false,
         };
 
     // if (id != defaultId) {
     //     options.id = id;
     // }
-    
+    console.log("raw: " + options.raw);
     switch (options.mode) {
         case "Rogue":
 
@@ -29,7 +30,17 @@ function fetchCgmData(id) {
         case "Nightscout":
 
             subscribeBy(options.api);
-            nightscout(options);
+            
+            options.api = options.api.replace("/pebble?units=mmol","");
+            options.api = options.api.replace("/pebble/","");
+            options.api = options.api.replace("/pebble","");
+
+            if(options.raw) {
+                getNightscoutCalRecord(options);
+            } else {
+               nightscout(options); 
+            }
+            
             break;
 
         case "Share":
@@ -77,23 +88,23 @@ function directionToTrend (direction) {
 function noiseIntToNoiseString (noiseInt) {
    switch(noiseInt) {
        case 0:
-        return "Not Computable";
+        return "NCP";
        break;
 
        case 1:
-        return "Clean";
+        return "CLN";
        break;
        
        case 2:
-        return "Light";
+        return "LGT";
        break;
        
        case 3:
-        return "Medium";
+        return "MED";
        break;
        
        case 4:
-        return "Heavy";
+        return "HVY";
        break;        
    }
 }
@@ -147,6 +158,50 @@ function sendUnknownError(msg) {
             }); 
 }
 
+function getNightscoutCalRecord(options){
+
+    var url = options.api + "/api/v1/entries/cal.json?count=1";
+    var http = new XMLHttpRequest();
+    http.open("GET", url, true);
+    http.onload = function (e) {
+             
+        if (http.status == 200) {
+            var data = JSON.parse(http.responseText);
+            console.log("response: " + http.responseText);
+             
+            if (data.length == 0) {               
+                options.raw = 0;
+                nightscout(options);
+            } else { 
+                options.cal = {
+                    'slope' : parseInt(data[0].slope, 10),
+                    'intercept' : parseInt(data[0].intercept,10),
+                    'scale' :  parseInt(data[0].scale)                  
+                }
+                nightscout(options);
+            }
+
+        } else {
+           sendUnknownError("data err");
+        }
+    };
+    
+    http.onerror = function () {        
+        sendServerError();
+    };
+    http.ontimeout = function () {
+        sendTimeOutError();
+    };
+
+    try {
+        http.send();
+    }
+    catch (e) {
+        sendUnknownError("invalid url");
+    }
+    
+    
+}
 
 //parse and use standard NS data
 function nightscout(options) {
@@ -160,16 +215,14 @@ function nightscout(options) {
     } else {
         fix = 1;
         options.conversion = .0555;       
-        options.unit = "mmol/l";
+        options.unit = "mmol/L";
     }
 
     options.vibe = parseInt(options.vibe, 10);   
     var now = new Date();
     var http = new XMLHttpRequest();
-    options.api = options.api.replace("/pebble?units=mmol","");
-    options.api = options.api.replace("/pebble","");
-    options.api = options.api.replace("/pebble/","");
-    var url = options.api + "/api/v1/entries.json?count=9";
+
+    var url = options.api + "/api/v1/entries/sgv.json?count=9";
     http.open("GET", url, true);
 
     http.onload = function (e) {
@@ -181,6 +234,39 @@ function nightscout(options) {
             if (data.length == 0) {               
                 sendUnknownError("data err");
             } else { 
+                
+                 var body = 'Trend: ' + data[0].direction + '\nNoise: ' + noiseIntToNoiseString(data[0].noise)
+                    + '\nUnfiltered: ' + data[0].unfiltered
+                    + '\nFiltered: ' + data[0].filtered;
+                
+                console.log("xdrip: " + data[0].device.indexOf("xDrip"));
+                var deltaSuffix = "";
+                var rawEgv = 0;
+                if (options.raw && (data[0].device.indexOf("xDrip") == -1)) {
+                    var currentCal = options.cal;
+                    var ratio;
+                    if (data[0].noise != 1) {
+
+                        if (data[0].filtered === 0 || data[0].sgv < 40) {
+                            rawEgv = currentCal.scale * (data[0].unfiltered - currentCal.intercept) / currentCal.slope;
+                        } else {
+                            ratio = currentCal.scale * (data[0].filtered - currentCal.intercept) / currentCal.slope / data[0].sgv;
+                            rawEgv = currentCal.scale * (data[0].filtered - currentCal.intercept) / currentCal.slope / ratio;
+                        }
+                        
+                        deltaSuffix = " " + noiseIntToNoiseString(data[0].noise)
+                        console.log("raw egv " + rawEgv);
+                    }
+
+                    for (var i = 0; i < data.length; i++) {
+                        if (data[i].noise != 1 && data[i].unfiltered) {                           
+                            ratio = currentCal.scale * (data[i].filtered - currentCal.intercept) / currentCal.slope / data[i].sgv;
+                            data[i].sgv = parseInt(currentCal.scale * (data[i].filtered - currentCal.intercept) / currentCal.slope / ratio);                           
+                            console.log("raw egv " + i + " " + data[i].sgv);
+                        }                                             
+                    }              
+
+                }
             
                 var timeAgo = now.getTime() - data[0].date;       
                 var egv, delta, trend, convertedDelta;
@@ -212,7 +298,7 @@ function nightscout(options) {
                     
                     var timeBetweenReads = data[0].date - data[1].date ;
                     var minutesBetweenReads = (timeBetweenReads / (1000 * 60)).toFixed(1);                              
-                    delta = parseInt((delta/minutesBetweenReads * 5),10);
+                    delta = (delta/minutesBetweenReads * 5).toFixed(fix);
                                     
                     var deltaString = (delta > 0) ? "+" + delta.toString() : delta.toString();
 					delta = deltaString + options.unit;
@@ -231,9 +317,8 @@ function nightscout(options) {
                     title = "[SPARK] Special: " + data[0].sgv;
                 }
 
-                var body = 'Trend: ' + data[0].direction + '\nNoise: ' + noiseIntToNoiseString(data[0].noise)
-                    + '\nUnfiltered: ' + data[0].unfiltered
-                    + '\nFiltered: ' + data[0].filtered;
+                if (rawEgv > 0)
+                    egv = rawEgv;
 
                 var pin = {
                     "id": "pin-egv" + topic + pin_id_suffix,
@@ -262,8 +347,11 @@ function nightscout(options) {
                     if (timeDeltaMinutes % 5 == 0)
                         alert = 4;
                 }
+                
+                
+                
                 Pebble.sendAppMessage({
-                    "delta": delta,
+                    "delta": delta + deltaSuffix,
                     "egv": egv,	
                     "trend": trend,	
                     "alert": alert,	
@@ -347,7 +435,7 @@ function share(options) {
     } else {
         fix = 1;
         options.conversion = .0555;       
-        options.unit = "mmol/l";
+        options.unit = "mmol/L";
     }
     options.vibe = parseInt(options.vibe, 10);
     var defaults = {
@@ -430,9 +518,13 @@ function getShareGlucoseData(sessionId, defaults, options) {
                 if (data.length == 1) {
                     delta = "can't calc";
                 } else {
+                    var timeBetweenReads = parseInt(data[0].WT.match(regex)[1]) - parseInt(data[1].WT.match(regex)[1]);
+                    var minutesBetweenReads = (timeBetweenReads / (1000 * 60)).toFixed(1);                                               
                     var deltaZero = data[0].Value * options.conversion;
                     var deltaOne = data[1].Value * options.conversion;
-                    convertedDelta = (deltaZero - deltaOne);
+                    convertedDelta = (deltaZero - deltaOne);                   
+                    delta = ((convertedDelta/minutesBetweenReads) * 5).toFixed(fix);
+                    
                 }
 
                 //Manage HIGH & LOW
@@ -448,6 +540,10 @@ function getShareGlucoseData(sessionId, defaults, options) {
                     var convertedEgv = (data[0].Value * options.conversion);
                     egv = (convertedEgv < 39 * options.conversion) ? parseFloat(Math.round(convertedEgv * 100) / 100).toFixed(1).toString() : convertedEgv.toFixed(fix).toString();
                     delta = (convertedEgv < 39 * options.conversion) ? parseFloat(Math.round(convertedDelta * 100) / 100).toFixed(1) : convertedDelta.toFixed(fix);
+                    
+                    
+                    
+                    
                     var deltaString = (delta > 0) ? "+" + delta.toString() : delta.toString();
 					delta = deltaString + options.unit;
                     trend = (data[0].Trend > 7) ? 0 : data[0].Trend;
@@ -696,7 +792,7 @@ function calculateAlert(loss, read, upload, noise, id_p, id_w, options) {
 }
 
 Pebble.addEventListener("showConfiguration", function () {
-    Pebble.openURL('http://cgmwatch.azurewebsites.net/config.1.html');
+    Pebble.openURL('http://cgmwatch.azurewebsites.net/config.2.html');
 });
 
 Pebble.addEventListener("webviewclosed", function (e) {
