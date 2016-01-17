@@ -1,0 +1,89 @@
+{
+     "appKeys": {
+        "alert": 3,
+        "egv": 1,
+        "id": 5,
+        "time_delta_int": 6,
+        "trend": 2,
+        "vibe": 4,
+        "bgs": 7,
+        "bg_times": 8,
+        "delta": 0
+    },
+    "capabilities": [
+        "configurable"
+    ],
+    "companyName": "John Costik",
+    "longName": "Simple CGM Spark DEV",
+    "projectType": "native",
+    "resources": {
+        "media": [
+            
+            {          
+                "file": "fonts/HelveticaNeueBold.ttf",
+                "name": "FONT_HN_BOLD_48",
+                "type": "font"
+            },
+            
+            {
+                "file": "images/up.png",
+                "name": "IMAGE_UP",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/up45.png",
+                "name": "IMAGE_UP45",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/flat.png",
+                "name": "IMAGE_FLAT",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/down.png",
+                "name": "IMAGE_DOWN",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/down45.png",
+                "name": "IMAGE_DOWN45",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/refresh.png",
+                "name": "IMAGE_REFRESH",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/upup.png",
+                "name": "IMAGE_UPUP",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/downdown.png",
+                "name": "IMAGE_DOWNDOWN",
+                "type": "png-trans"
+            },
+            {
+                "file": "images/none.png",
+                "name": "IMAGE_NONE",
+                "type": "png-trans"
+            }
+        ]
+    },
+    "sdkVersion": "3",
+    "shortName": "SimpleCGMSparkDEV",
+    "targetPlatforms": [
+        "basalt",
+        "aplite",
+        "chalk"
+    ],
+
+    "uuid": "40ef59ac-156d-4b29-a155-20000a0c3a72",
+    "versionLabel": "1.9",
+    "watchapp": {
+        "watchface": true
+    }
+}
+
