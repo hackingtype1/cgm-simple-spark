@@ -14,7 +14,7 @@ typedef struct {
 static Window * s_main_window;
 static Layer * s_canvas_layer;
 
-static AppTimer *timer;
+static AppTimer *timer, *timer2;
 
 static GPoint s_center;
 static Time s_last_time;
@@ -22,8 +22,9 @@ static int s_radius = 0, t_delta = 0, has_launched = 0, vibe_state = 1, alert_st
 static int * bgs;
 static int * bg_times;
 static int num_bgs = 0;
-static int retry_interval = 4;
+static int retry_interval = 5;
 static int tag_raw = 0;
+static int is_web = 0;
 
 static GBitmap *icon_bitmap = NULL;
 
@@ -118,8 +119,12 @@ static void send_int(int key, int value) {
   dict_write_int(iter, key, &value, sizeof(int), true);
   app_message_outbox_send();
 }
+void send_cmd_connect() {
+    data_id = 69;
+    send_int(5, data_id);
+} 
 
-void send_cmd(void) {
+void send_cmd() {
     //APP_LOG(APP_LOG_LEVEL_INFO, "send_cmd");
     
     if (s_canvas_layer) {
@@ -152,6 +157,11 @@ static void timer_callback(void *data) {
     send_cmd(); 
 }
 
+static void timer_callback_2(void *data) {   
+    //send_cmd_connect();
+    //timer2 = app_timer_register(60000*2, timer_callback_2, NULL);
+}
+
 static void clock_refresh(struct tm * tick_time) {
      char *time_format;
  
@@ -162,15 +172,15 @@ static void clock_refresh(struct tm * tick_time) {
     
    #ifdef PBL_PLATFORM_CHALK 
     if (clock_is_24h_style()) {
-        time_format = "%H:%M\n%B %e";
+        time_format = "%H:%M %b%e";
     } else {
-        time_format = "%I:%M\n%B %e";
+        time_format = "%I:%M %b%e";
     }
 #else
 if (clock_is_24h_style()) {
-        time_format = "%H:%M  %B %e";
+        time_format = "%H:%M  %h %e";
     } else {
-        time_format = "%I:%M  %B %e";
+        time_format = "%I:%M  %h %e";
     }
 #endif  
     
@@ -203,7 +213,7 @@ static void tick_handler(struct tm * tick_time, TimeUnits changed) {
                 text_layer_set_text(time_delta_layer, time_delta_str);
             }
     } else 
-    //APP_LOG(APP_LOG_LEVEL_INFO, "tick check_count: %d", check_count);
+    
     if(t_delta > retry_interval || check_count > 1) {
 
         send_cmd();
@@ -238,6 +248,9 @@ static void update_proc(Layer * layer, GContext * ctx) {
     graphics_context_set_stroke_color(ctx, GColorBlack); 
     graphics_context_set_antialiased(ctx, ANTIALIASING);
     
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, GRect(0, 0, 144, 25), 0, GCornerNone);
+    
     graphics_context_set_fill_color(ctx, GColorFromRGB(s_color_channels[0], s_color_channels[1], s_color_channels[2]));
     graphics_fill_rect(ctx, GRect(0, 24, 144, 74), 4, GCornersAll);
     graphics_context_set_stroke_color(ctx, GColorWhite); 
@@ -255,36 +268,57 @@ static void update_proc(Layer * layer, GContext * ctx) {
     graphics_context_set_antialiased(ctx, ANTIALIASING);
     
     graphics_context_set_fill_color(ctx, GColorFromRGB(s_color_channels[0], s_color_channels[1], s_color_channels[2]));
-    graphics_fill_rect(ctx, GRect(0, 40, 180, 46), 4, GCornersAll);
-    graphics_context_set_stroke_color(ctx, GColorWhite); 
-    graphics_context_set_stroke_width(ctx, 1);
-    graphics_draw_round_rect(ctx, GRect(0, 40, 180, 46), 4);
-	graphics_draw_round_rect(ctx, GRect(0, 137, 180, 70), 4);
-    
+    graphics_fill_rect(ctx, GRect(-5, 0, 185, 90), 4, GCornersAll);
+    //graphics_context_set_stroke_color(ctx, GColorLightGray); 
+    //graphics_context_set_stroke_width(ctx, 2);
+    //graphics_draw_round_rect(ctx, GRect(-5, 0, 185, 86), 4);
+	//graphics_draw_round_rect(ctx, GRect(-5, 137, 185, 71), 4);
+        
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_context_set_stroke_color (ctx,GColorBlack);
+    graphics_draw_circle(ctx, GPoint(90, -199), 240);
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_circle(ctx, GPoint(90, -200), 240);
+    //graphics_context_set_stroke_width(ctx, 1);
+    graphics_context_set_stroke_color(ctx, GColorFromRGB(s_color_channels[0], s_color_channels[1], s_color_channels[2])); 
+    graphics_draw_circle(ctx, GPoint(90, 376), 240);
+    graphics_fill_circle(ctx, GPoint(90, 377), 240);
+
     if(chart_layer)
         chart_layer_set_canvas_color(chart_layer, GColorFromRGB(b_color_channels[0], b_color_channels[1], b_color_channels[2]));
     
 #else
-    //Change Background
-    if (b_color_channels[0] == 170) {
-        //OKAY
-        graphics_context_set_fill_color(ctx, GColorWhite);
-        graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
-        if(time_layer)
-            text_layer_set_text_color(time_layer, GColorBlack);
-    } else {
-        //BAD COMMS
-        graphics_context_set_fill_color(ctx, GColorBlack);
-        graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
-        if(time_layer)
-            text_layer_set_text_color(time_layer, GColorWhite);
-    }
+    graphics_context_set_fill_color(ctx, GColorFromRGB(b_color_channels[0], b_color_channels[1], b_color_channels[2]));
+    graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+    
+    graphics_context_set_stroke_color(ctx, GColorBlack); 
+    graphics_context_set_antialiased(ctx, ANTIALIASING);
+    
+    graphics_context_set_fill_color(ctx, GColorWhite);
+    graphics_fill_rect(ctx, GRect(0, 0, 144, 25), 0, GCornerNone);
+    
+    graphics_context_set_fill_color(ctx, GColorFromRGB(s_color_channels[0], s_color_channels[1], s_color_channels[2]));
+    graphics_fill_rect(ctx, GRect(0, 24, 144, 74), 4, GCornersAll);
+    graphics_context_set_stroke_color(ctx, GColorWhite); 
+    graphics_context_set_stroke_width(ctx, 2);
+    graphics_draw_round_rect(ctx, GRect(0, 24, 144, 74), 4);
+    // //Change Background
+    // if (b_color_channels[0] == 170) {
+    //     //OKAY
+    //     graphics_context_set_fill_color(ctx, GColorWhite);
+    //     graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+    //     if(time_layer)
+    //         text_layer_set_text_color(time_layer, GColorBlack);
+    // } else {
+    //     //BAD COMMS
+    //     graphics_context_set_fill_color(ctx, GColorBlack);
+    //     graphics_fill_rect(ctx, GRect(0, 0, 144, 168), 0, GCornerNone);
+    //     if(time_layer)
+    //         text_layer_set_text_color(time_layer, GColorBlack);
+    // }
     // Change clockface
     if (s_color_channels[0] < 255){
-        //OKAY
-        graphics_context_set_stroke_color(ctx, GColorBlack);
-        graphics_context_set_fill_color(ctx, GColorClear);
-        
+        //OKAY      
         if (bg_layer)
             text_layer_set_text_color(bg_layer, GColorBlack);      
         if (delta_layer)
@@ -295,10 +329,7 @@ static void update_proc(Layer * layer, GContext * ctx) {
             bitmap_layer_set_compositing_mode(icon_layer, GCompOpClear);
         
     } else {
-        //NOT OKAY
-        graphics_context_set_stroke_color(ctx, GColorWhite);
-        graphics_context_set_fill_color(ctx, GColorBlack);
-        
+       
         if (bg_layer)
             text_layer_set_text_color(bg_layer, GColorWhite);
         if (delta_layer)
@@ -308,7 +339,7 @@ static void update_proc(Layer * layer, GContext * ctx) {
         if(icon_layer)
             bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
     }
-    graphics_fill_rect(ctx, GRect(0, 24, 144, 74), 0, GCornerNone);
+    // graphics_fill_rect(ctx, GRect(0, 24, 144, 74), 0, GCornerNone);
 
 #endif
     
@@ -320,7 +351,7 @@ static void reset_background() {
     b_color_channels[1] = 0;
     b_color_channels[2] = 0;
     if(time_layer)
-        text_layer_set_text_color(time_layer, GColorWhite);
+        text_layer_set_text_color(time_layer, GColorBlack);
     if(chart_layer)
         chart_layer_set_canvas_color(chart_layer, GColorBlack);
     layer_mark_dirty(s_canvas_layer);
@@ -353,9 +384,9 @@ static void process_alert() {
         text_layer_set_text_color(bg_layer, GColorBlack);
 #ifdef PBL_PLATFORM_CHALK 
         if(delta_layer)       
-            text_layer_set_text_color(delta_layer, GColorWhite);
+            text_layer_set_text_color(delta_layer, GColorBlack);
         if(time_delta_layer)
-            text_layer_set_text_color(time_delta_layer, GColorWhite);
+            text_layer_set_text_color(time_delta_layer, GColorBlack);
 #else 
         if(delta_layer)
             text_layer_set_text_color(delta_layer, GColorBlack);
@@ -364,14 +395,17 @@ static void process_alert() {
 #endif
         bitmap_layer_set_compositing_mode(icon_layer, GCompOpClear);
 #elif defined(PBL_BW)
+        s_color_channels[0] = 170;
+        s_color_channels[1] = 170;
+        s_color_channels[2] = 170;
         if(bg_layer)
-            text_layer_set_text_color(bg_layer, GColorWhite);
+            text_layer_set_text_color(bg_layer, GColorBlack);
         if(delta_layer)
-            text_layer_set_text_color(delta_layer, GColorWhite);
+            text_layer_set_text_color(delta_layer, GColorBlack);
         if(time_delta_layer)
-            text_layer_set_text_color(time_delta_layer, GColorWhite);
+            text_layer_set_text_color(time_delta_layer, GColorBlack);
         if(icon_layer)
-            bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
+            bitmap_layer_set_compositing_mode(icon_layer, GCompOpClear);
 #endif
                      
         break;
@@ -384,18 +418,26 @@ static void process_alert() {
        if (vibe_state > 0 && !is_snoozed())
             vibes_long_pulse();
             
-        //APP_LOG(APP_LOG_LEVEL_DEBUG, "Alert key: %i", LOSS_HIGH_NO_NOISE);
-        if(bg_layer)
-            text_layer_set_text_color(bg_layer, GColorWhite);
+#ifdef PBL_PLATFORM_CHALK
         if(delta_layer)
+            text_layer_set_text_color(delta_layer, GColorBlack);
+        if(time_delta_layer)
+            text_layer_set_text_color(time_delta_layer, GColorBlack);
+#else   
+        if(delta_layer)   
             text_layer_set_text_color(delta_layer, GColorWhite);
         if(time_delta_layer)
             text_layer_set_text_color(time_delta_layer, GColorWhite);
+#endif
+
+        if(bg_layer)
+            text_layer_set_text_color(bg_layer, GColorWhite);
         if(icon_layer)
             bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
         break;
         
     case OKAY:;
+
         s_color_channels[0] = 0;
         s_color_channels[1] = 255;
         s_color_channels[2] = 0;
@@ -408,9 +450,9 @@ static void process_alert() {
             text_layer_set_text_color(bg_layer, GColorBlack);
 #ifdef PBL_PLATFORM_CHALK
         if(delta_layer)
-            text_layer_set_text_color(delta_layer, GColorWhite);
+            text_layer_set_text_color(delta_layer, GColorBlack);
         if(time_delta_layer)
-            text_layer_set_text_color(time_delta_layer, GColorWhite);
+            text_layer_set_text_color(time_delta_layer, GColorBlack);
 #else   
         if(delta_layer)   
             text_layer_set_text_color(delta_layer, GColorBlack);
@@ -430,14 +472,24 @@ static void process_alert() {
         s_color_channels[1] = 0;
         s_color_channels[2] = 255;
         
-        if (time_delta_layer)
+#ifdef PBL_PLATFORM_CHALK
+        if(delta_layer)
+            text_layer_set_text_color(delta_layer, GColorBlack);
+        if(time_delta_layer)
+            text_layer_set_text_color(time_delta_layer, GColorBlack);
+#else   
+        if(delta_layer)   
+            text_layer_set_text_color(delta_layer, GColorWhite);
+        if(time_delta_layer)
             text_layer_set_text_color(time_delta_layer, GColorWhite);
+#endif
+        
+
         if (icon_layer)
             bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
         if (bg_layer)
             text_layer_set_text_color(bg_layer, GColorWhite);
-        if (delta_layer)    
-            text_layer_set_text_color(delta_layer, GColorWhite);
+
         break;
      
      case NO_CHANGE:;
@@ -447,7 +499,6 @@ static void process_alert() {
 }
 
 static void inbox_received_callback(DictionaryIterator *iterator, void *context) {
-    app_timer_cancel(timer);
     check_count = 0;
     //APP_LOG(APP_LOG_LEVEL_INFO, "Message received!");
     if(time_delta_layer)
@@ -527,7 +578,7 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
                 bgs = (int*)malloc((num_strings-1)*sizeof(int));     
                 for (uint8_t n = 0; n < num_strings; n += 1) {
                     if (n == 0) {
-                        tag_raw = data_processor_get_int(state);
+                        is_web = data_processor_get_int(state);
                         //APP_LOG(APP_LOG_LEVEL_DEBUG, "Tag Raw : %i", tag_raw);
                     }
                     else {
@@ -571,6 +622,9 @@ static void inbox_received_callback(DictionaryIterator *iterator, void *context)
     process_alert();
     // accel_tap_service_unsubscribe();
     has_launched = 1;
+    
+    //timer2 = app_timer_register(60000*2, timer_callback_2, NULL);
+    
 
 }
 
@@ -580,13 +634,13 @@ static void inbox_dropped_callback(AppMessageResult reason, void *context) {
     s_color_channels[2] = 255;
         
     if (time_delta_layer)
-        text_layer_set_text_color(time_delta_layer, GColorWhite);
+        text_layer_set_text_color(time_delta_layer, GColorBlack);
     if (icon_layer)
-        bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
+        bitmap_layer_set_compositing_mode(icon_layer, GCompOpClear);
     if (bg_layer)
-        text_layer_set_text_color(bg_layer, GColorWhite);
+        text_layer_set_text_color(bg_layer, GColorBlack);
     if (delta_layer)    
-        text_layer_set_text_color(delta_layer, GColorWhite);
+        text_layer_set_text_color(delta_layer, GColorBlack);
     
     snprintf(time_delta_str, 12, "in-err(%d)", t_delta);
     if(bg_layer)
@@ -605,13 +659,13 @@ static void outbox_failed_callback(DictionaryIterator *iterator, AppMessageResul
     s_color_channels[2] = 255;
         
     if (time_delta_layer)
-        text_layer_set_text_color(time_delta_layer, GColorWhite);
+        text_layer_set_text_color(time_delta_layer, GColorBlack);
     if (icon_layer)
-        bitmap_layer_set_compositing_mode(icon_layer, GCompOpOr);
+        bitmap_layer_set_compositing_mode(icon_layer, GCompOpClear);
     if (bg_layer)
-        text_layer_set_text_color(bg_layer, GColorWhite);
+        text_layer_set_text_color(bg_layer, GColorBlack);
     if (delta_layer)    
-        text_layer_set_text_color(delta_layer, GColorWhite);
+        text_layer_set_text_color(delta_layer, GColorBlack);
         
     snprintf(time_delta_str, 12, "out-err(%d)", t_delta);
     
@@ -642,14 +696,14 @@ static void window_load(Window * window) {
     layer_add_child(window_layer, s_canvas_layer);
     
 #ifdef PBL_PLATFORM_CHALK   
-    icon_layer = bitmap_layer_create(GRect(106 + 18, 36+offset, 30, 30));
-    bg_layer = text_layer_create(GRect(4 + 18, 19+offset, 100, 75));
-	delta_layer = text_layer_create(GRect(0, 136, 180, 25));
-    time_delta_layer = text_layer_create(GRect(0, 156, 180, 25));
-    time_layer = text_layer_create(GRect(40, 0, 100, 40));  
+    icon_layer = bitmap_layer_create(GRect(106 + 18, 41+offset, 30, 30));
+    bg_layer = text_layer_create(GRect(4 + 18, 25+offset, 95, 75));
+	delta_layer = text_layer_create(GRect(0, 18, 180, 25));
+    time_delta_layer = text_layer_create(GRect(0, 0, 180, 25));
+    time_layer = text_layer_create(GRect(40, 137, 100, 40));  
     chart_layer = chart_layer_create((GRect) { 
-      	.origin = { 18, 89},
-		.size = { 146, 45 } });
+      	.origin = { 12, 90},
+		.size = { 154, 46 } });
     text_layer_set_text_alignment(time_delta_layer, GTextAlignmentCenter); 
     text_layer_set_text_alignment(delta_layer, GTextAlignmentCenter);
 #else 
@@ -657,7 +711,7 @@ static void window_load(Window * window) {
     bg_layer = text_layer_create(GRect(8, 17+offset, 100, 75));
     delta_layer = text_layer_create(GRect(4, 74, 136, 25));
     time_delta_layer = text_layer_create(GRect(4, 21, 136, 25));
-    time_layer = text_layer_create(GRect(0, 0, 144, 20));
+    time_layer = text_layer_create(GRect(0, -2, 144, 25));
     chart_layer = chart_layer_create((GRect) { 
       	.origin = { 4, 102},
 		.size = { 136, 62 } });
@@ -671,7 +725,7 @@ static void window_load(Window * window) {
     text_layer_set_text_color(bg_layer, GColorBlack);
     text_layer_set_background_color(bg_layer, GColorClear);
     text_layer_set_font(bg_layer, fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_HN_BOLD_48)));
-    text_layer_set_text_alignment(bg_layer, GTextAlignmentLeft);
+    text_layer_set_text_alignment(bg_layer, GTextAlignmentCenter);
     layer_add_child(s_canvas_layer, text_layer_get_layer(bg_layer)); 
  
     text_layer_set_text_color(delta_layer, GColorBlack);
@@ -684,17 +738,24 @@ static void window_load(Window * window) {
     text_layer_set_font(time_delta_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD));
     layer_add_child(s_canvas_layer, text_layer_get_layer(time_delta_layer)); 
  
-    text_layer_set_text_color(time_layer, GColorWhite);
+    text_layer_set_text_color(time_layer, GColorBlack);
     text_layer_set_background_color(time_layer, GColorClear);
-    text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD)); 
+    // 
+    
+    #ifdef PBL_PLATFORM_CHALK   
+    text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD)); 
+    #else 
+    text_layer_set_font(time_layer, fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD)); 
+    #endif
  
     text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
     layer_add_child(s_canvas_layer, text_layer_get_layer(time_layer));
      
   	chart_layer_set_plot_color(chart_layer, GColorWhite);
-  	chart_layer_set_canvas_color(chart_layer, GColorBlack);
+  	chart_layer_set_canvas_color(chart_layer, GColorClear);
   	chart_layer_show_points_on_line(chart_layer, true);
 	chart_layer_animate(chart_layer, false);
+    // chart_layer_set_plot_type(chart_layer, eLINE)
   	layer_add_child(window_layer, chart_layer_get_layer(chart_layer));
 
 }
@@ -748,9 +809,10 @@ static void init() {
     app_message_register_inbox_dropped(inbox_dropped_callback);
     app_message_register_outbox_failed(outbox_failed_callback);
     app_message_register_outbox_sent(outbox_sent_callback);
-    app_message_open(320, 40);
+    app_message_open(app_message_inbox_size_maximum(), 40);
     
-    timer = app_timer_register(20000, timer_callback, NULL);
+    timer = app_timer_register(1000, timer_callback, NULL);
+
 
 }
 
