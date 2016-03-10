@@ -567,41 +567,55 @@ static void chart_layer_update_func(Layer* l, GContext* ctx) {
      APP_LOG(APP_LOG_LEVEL_DEBUG, "range2: %i", (int)(data->fXYRange));
  
     if ((int)(data->fXYRange)<= 30) {
-
-        iPointRadius = 6;
+        if ((int)data->iPointsToDraw <= 12)
+            iPointRadius = 4;
+        else
+            iPointRadius = 0;
     } 
     else if ((int)(data->fXYRange) <= 60)  {
-
-        iPointRadius = 5;
+        if ((int)data->iPointsToDraw <= 12)
+            iPointRadius = 3;
+        else
+            iPointRadius = 0;
     }
     else if ((int)(data->fXYRange) <= 100)  {
-
-        iPointRadius = 4;
+        if ((int)data->iPointsToDraw <= 12)
+            iPointRadius = 2;
+        else
+            iPointRadius = 0;
     } else 
     {
-        iPointRadius = 3;
+         if ((int)data->iPointsToDraw <= 12)
+            iPointRadius = 2;
+        else
+            iPointRadius = 0;
     }
     // main plot
-#ifdef PBL_PLATFORM_BASALT
+// #ifdef PBL_PLATFORM_BASALT
+        data->typePlot = eLINE;
     if ((int)(data->fXYRange) <= 30) {
-        //graphics_context_set_stroke_width(ctx, 0);
-        data->typePlot = eSCATTER;
-
+        if ((int)data->iPointsToDraw <= 12) {
+             graphics_context_set_stroke_width(ctx, 0);
+            graphics_context_set_stroke_color(ctx, GColorClear); 
+        }
+        else
+            graphics_context_set_stroke_width(ctx, 4);
+        
+        //data->typePlot = eSCATTER;
     } 
     else if ((int)(data->fXYRange) <= 60)  {
-        graphics_context_set_stroke_width(ctx, 3);
+        graphics_context_set_stroke_width(ctx, 2);
 
     }
     else if ((int)(data->fXYRange) <= 100)  {
-        graphics_context_set_stroke_width(ctx, 2);
-
+        graphics_context_set_stroke_width(ctx, 1);
     } else 
     {
         graphics_context_set_stroke_width(ctx, 1);
 
     }
     //const uint16_t iPointRadius = ((data->typePlot == eLINE) || (data->iNumOrigPoints < ((unsigned int)bounds.size.w / 3))) ? 4 : 3;
-#endif
+// #endif
 
 APP_LOG(APP_LOG_LEVEL_DEBUG, "radius: %i", iPointRadius);  
 

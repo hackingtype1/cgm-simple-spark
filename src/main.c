@@ -191,7 +191,7 @@ if (clock_is_24h_style()) {
     }
     
     if (s_canvas_layer) {
-        layer_mark_dirty(s_canvas_layer);
+        //layer_mark_dirty(s_canvas_layer);
         if(time_layer)
             text_layer_set_text(time_layer, time_text);
     }
@@ -383,11 +383,15 @@ static void process_alert() {
 #if defined(PBL_COLOR)
         text_layer_set_text_color(bg_layer, GColorBlack);
 #ifdef PBL_PLATFORM_CHALK 
+        if(bg_layer)
+                text_layer_set_text_color(bg_layer, GColorBlack);
         if(delta_layer)       
             text_layer_set_text_color(delta_layer, GColorBlack);
         if(time_delta_layer)
             text_layer_set_text_color(time_delta_layer, GColorBlack);
 #else 
+        if(bg_layer)
+            text_layer_set_text_color(bg_layer, GColorBlack);
         if(delta_layer)
             text_layer_set_text_color(delta_layer, GColorBlack);
         if(time_delta_layer)
