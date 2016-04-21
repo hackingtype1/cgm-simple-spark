@@ -15,10 +15,6 @@ function fetchCgmData(id) {
             'vibe' : 1,
             'raw' : false,
         };
-
-    // if (id != defaultId) {
-    //     options.id = id;
-    // }
     console.log("region: " + options.region);
     switch (options.mode) {
         case "Rogue":
@@ -89,23 +85,18 @@ function noiseIntToNoiseString (noiseInt) {
    switch(noiseInt) {
        case 0:
         return "NCP";
-       break;
 
        case 1:
         return "CLN";
-       break;
        
        case 2:
         return "LGT";
-       break;
        
        case 3:
         return "MED";
-       break;
        
        case 4:
         return "???";
-       break;        
    }
 }
 
@@ -167,8 +158,7 @@ function getNightscoutCalRecord(options){
              
         if (http.status == 200) {
             var data = JSON.parse(http.responseText);
-            //console.log("response: " + http.responseText);
-             
+
             if (data.length === 0) {               
                 options.raw = 0;
                 nightscout(options);
@@ -229,8 +219,7 @@ function nightscout(options) {
              
         if (http.status == 200) {
             var data = JSON.parse(http.responseText);
-            //console.log("response: " + http.responseText);
-             
+            //console.log("response: " + http.responseText);        
             if (data.length === 0) {               
                 sendUnknownError("data err");
             } else { 
@@ -253,14 +242,7 @@ function nightscout(options) {
                     var currentCal = options.cal;
                     var ratio;
                     if (data[0].noise != 1) {
-                        
-                       //console.log(currentCal.scale)
-                       //console.log(currentCal.intercept)
-                       //console.log(currentCal.slope)
-                       //console.log(data[0].sgv)
-                      // console.log(data[0].unfiltered)
-                      // console.log(data[0].filtered)
-                       
+                                              
                         if (data[0].filtered === 0 || data[0].sgv < 39) {
                             rawEgv = currentCal.scale * (data[0].unfiltered - currentCal.intercept) / currentCal.slope;
                         } else {
@@ -269,7 +251,6 @@ function nightscout(options) {
                         }
                         
                         deltaSuffix = " " + noiseIntToNoiseString(data[0].noise);
-                        //console.log("raw egv " + rawEgv);
                     }
 
                     for (var i = 0; i < data.length; i++) {
@@ -460,7 +441,6 @@ function createNightscoutBgTimeArray(data) {
     for (var i = 0; i < data.length; i++) {  
         var wall = parseInt(data[i].date);
         var timeAgo = msToMinutes(now.getTime() - wall);
-        //console.log("timeago: " + timeAgo);
         if (timeAgo < 45 && data[i].type == 'sgv' && data[i].sgv >= 39) {
             toReturn = toReturn + (45-timeAgo).toString() + ",";
         }
@@ -718,7 +698,6 @@ function createShareBgTimeArray(data) {
     for (var i = 0; i < data.length; i++) {  
         var wall = parseInt(data[i].WT.match(regex)[1]);
         var timeAgo = msToMinutes(now.getTime() - wall);
-        //console.log("timeago: " + timeAgo);
         if (timeAgo < 45) {
             toReturn = toReturn + (45-timeAgo).toString() + ",";
         }
@@ -732,7 +711,6 @@ function msToMinutes(millisec) {
 }
 
 function calculateShareAlert(egv, currentId, options) {
-    //console.log("comparing: " + currentId + " to " + options.id);
     if (parseInt(options.id, 10) == parseInt(currentId, 10)) {
         options.vibe_temp = 0;
     } else {
@@ -752,117 +730,10 @@ function calculateShareAlert(egv, currentId, options) {
 
 //using something different? code it up here-------ROGUE-----------------------------//:
 function rogue(options) {
-    var response;
-    var req = new XMLHttpRequest();
-    //console.log("api: " + options.api);
-    req.open('GET', options.api, true);
-
-    req.onload = function (e) {
-        //console.log(req.readyState);
-        if (req.readyState == 4) {
-            //console.log(req.status);
-            if (req.status == 200) {
-                //console.log("text: " + req.responseText);
-                response = JSON.parse(req.responseText);
-                
-                options.wt = response[0].datetime;
-                options.egv = response[0].sgv;
-                var alert = calculateAlert(response[0].avgloss, Math.floor(response[0].timesinceread), Math.round(response[0].timesinceupload), response[0].noise, options.id, response[0].id.toString(), options);
-                var egv = response[0].sgv;
-                if (response[0].noise != "Clean")
-                    egv = response[0].calculatedBg.toString();
-
-                var delta = Math.round(response[0].timesinceread) + " min. ago";
-                if (Math.round(response[0].timesinceread) < 1)
-                    delta = "now";
-                    
-                if  (response[0].trend == 4)
-                     response[0].trend = 0;
-                else if  (response[0].trend < 4)
-                     response[0].trend = response[0].trend + 1;     
-                     
-                var trend = (response[0].trend > 7) ? 0 : response[0].trend;       
-
-                Pebble.sendAppMessage({
-                    "delta": response[0].bgdelta.toString() + "mg/dL", 	//str
-                    "egv": egv,		//str	
-                    "trend": trend,	//int
-                    "alert": alert,	//int
-                    "vibe": parseInt(options.vibe_temp,10),
-                    "id": response[0].id,
-                    "time_delta_int": Math.floor(response[0].timesinceread),
-                    "bgs" : createBgArray(response),
-                    "bg_times" : createBgTimeArray(response)
-                    
-                });
-                options.id = response[0].id;
-                window.localStorage.setItem('cgmPebbleDuo', JSON.stringify(options));
-            } else {
-                sendUnknownError("data err");
-            }
-        } else {
-            //console.log("second if");
-        }
-    };
-    
-    req.onerror = function () {
-        sendServerError();
-    };
-   req.ontimeout = function () {
-        sendTimeOutError();
-    };
-    req.send(null);
+   
 }
 
-function createBgArray(data) {
-    var toReturn = "1,";
-    for (var i = 0; i < data.length ; i++) {
-         if (data[i].tsince <= 45 && i < data.length-1) {
-             toReturn = toReturn + data[i].sgv + ",";
-         } 
-    }
-    toReturn = toReturn.replace(/,\s*$/, "");  
-    return toReturn;
-}
-    
-function createBgTimeArray(data) {
-    var toReturn = []
-     for (var i = 0; i < data.length ; i++) {
-         if (data[i].tsince <= 45 && i < data.length-1) {
-             toReturn = toReturn + data[i].tnow + ",";
-         } 
-    } 
-    toReturn = toReturn.replace(/,\s*$/, "");  
-    return toReturn;  
-}
 
-function calculateAlert(loss, read, upload, noise, id_p, id_w, options) {
-    //console.log("comparing: " + id_p + " to " + id_w);
-    //console.log("options.vibe: " + options.vibe);
- 
-    if (read >= 15) {
-        var temp_alert = 0;
-        if (read % 5 == 0) {
-            temp_alert = 1;
-        }
-        options.vibe_temp = temp_alert;
-        return 4;
-    }
-
-    if (id_p == id_w) {
-        options.vibe_temp = 0;
-    } else {
-        options.vibe_temp = options.vibe + 1;
-    }
-				
-    if (loss * 100 > 4.5)
-        return 2;
-
-    if (loss * 100 > 2)
-        return 1;
-
-    return 0;
-}
 
 Pebble.addEventListener("showConfiguration", function () {
     Pebble.openURL('http://cgmwatch.azurewebsites.net/config.1.html');
@@ -876,7 +747,6 @@ Pebble.addEventListener("webviewclosed", function (e) {
 
 Pebble.addEventListener("ready",
     function (e) {
-        //console.log("ready");      
         var options = JSON.parse(window.localStorage.getItem('cgmPebbleDuo')) || 
         {    'mode': 'Share' ,
             'high': 180,
@@ -893,7 +763,6 @@ Pebble.addEventListener("ready",
 
 Pebble.addEventListener("appmessage",
     function (e) {
-        //console.log("appmessage");
         fetchCgmData(e.payload.id);
     });
     
@@ -908,7 +777,6 @@ function timelineRequest(pin, topic, type, callback) {
     // Create XHR
     var xhr = new XMLHttpRequest();
     xhr.onload = function() {
-        //console.log('timeline: response received: ' + this.responseText);
         callback(this.responseText);
     };
     
@@ -921,11 +789,9 @@ function timelineRequest(pin, topic, type, callback) {
 
     // Send
     xhr.send(JSON.stringify(pin));
-    //console.log('timeline: request sent.');
    
     var xhrSb = new XMLHttpRequest();
     xhrSb.onload = function() {
-        //console.log('timeline: response received: ' + this.responseText);
         callback(this.responseText);
     };
     xhrSb.open(type, url);
@@ -935,7 +801,6 @@ function timelineRequest(pin, topic, type, callback) {
     xhrSb.setRequestHeader('X-Pin-Topics', topic); 
     
     xhrSb.send(JSON.stringify(pin));
-    //console.log('timeline: SB request sent.');
    
 }
 
@@ -949,24 +814,19 @@ function subscribeBy(base) {
         topic = hashCode(base).toString();
         Pebble.getTimelineToken(
             function (token) {
-                //console.log('My timeline token is: ' + token);
             },
             function (error) {
-                //console.log('Error getting timeline token: ' + error);
                 hasTimeline = 0;
             }
             );
         Pebble.timelineSubscribe(topic,
             function () {
-                //console.log('Subscribed to: ' + topic);
             },
             function (errorString) {
-                //console.log('Error subscribing to topic: ' + errorString);
                 hasTimeline = 0;
             }
             );
     } catch (err) {
-        //console.log('Error: ' + err.message);
         hasTimeline = 0;
     }
     
@@ -977,19 +837,13 @@ function subscribeBy(base) {
 
 function cleanupSubscriptions() {
     Pebble.timelineSubscriptions(
-        function (topics) {
-            //console.log('Subscribed to ' + topics.join(','));
-            //console.log("subs: " + topics);
+        function (topics) {         
             for (var i = 0; i < topics.length; i++) {
-                //console.log("topic: " + topic)
-                //console.log("topics[i]: " + topics[i])
                 if (topic != topics[i]) {
                     Pebble.timelineUnsubscribe(topics[i],
                         function () {
-                            //console.log('Unsubscribed from: ' + topics[i]);
                         },
                         function (errorString) {
-                            //console.log('Error unsubscribing from topic: ' + errorString);
                         }
                         );
                 }
@@ -1012,6 +866,6 @@ function hashCode(base) {
         hash |= 0; // Convert to 32bit integer
     }
     return hash;
-};
+}
 
 /***************************** end timeline lib *******************************/
